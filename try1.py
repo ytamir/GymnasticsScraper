@@ -1,12 +1,17 @@
+## TODO find methods for getting all gymnasts that are not in the list like https://thegymter.net/konnor-mcclain/
+
 ## Imports
 import re
 import requests as req
 from bs4 import BeautifulSoup
 
+## Imports for google sheets API
+import pygsheets
+import pandas as pd
+
 ## Gather links from gymternet
 resp = req.get("https://thegymter.net/gymnast-database/")
-html_page = resp.text
-soup = BeautifulSoup(html_page)
+soup = BeautifulSoup(resp.text, 'lxml')
 links = []
 
 ## Add html href to links array using regex
@@ -19,8 +24,65 @@ removedTopBottomLinks = [y for y in removedTopLinks if y not in ['https://thegym
 
 firstGymnast = req.get(removedTopBottomLinks[0])
 
-print(firstGymnast.text)
+##print(firstGymnast.text)
 
 ## Parsing Table
+tablesoup = BeautifulSoup(firstGymnast.text, 'lxml')
+
+##table2 = soup.find('table')
+data = []
+
+tables = tablesoup.find_all('table')
+
+for table in tables:
+    ## print(table)
+    ## print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+    rows = table.find_all('tr')
+    for row in rows:
+        cols = row.find_all('td')
+        cols = [ele.text.strip() for ele in cols]
+        data.append([ele for ele in cols if ele])
+
+print(data)
+##print(table2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## db 
+#authorization
+gc = pygsheets.authorize(service_file='creds.json')
+
+# Create empty dataframe
+df = pd.DataFrame()
+
+# Create a column
+df['name'] = ['Directionally Challenged Jumpy', 'Steve', 'Sarah']
+
+#open the google spreadsheet (where 'PY to Gsheet Test' is the name of my sheet)
+sh = gc.open('gymnastsDb')
+
+#select the first sheet 
+wks = sh[0]
+
+#update the first sheet with df, starting at cell B2. 
+wks.set_dataframe(df,(1,1))
